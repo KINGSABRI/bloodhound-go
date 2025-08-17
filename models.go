@@ -325,9 +325,9 @@ type ForeignPrincipalsResponse struct {
 
 // GraphNodeProperties represents the properties of a node in a graph response.
 type GraphNodeProperties struct {
-	Name       string `json:"name"`
-	Label      string `json:"label"`
-	ObjectID   string `json:"objectid"`
+	Name       string `json:"label"` // The display name is in the 'label' field
+	Kind       string `json:"kind"`  // The object type is in the 'kind' field
+	ObjectID   string `json:"objectId"`
 	SystemTags string `json:"system_tags"`
 }
 
