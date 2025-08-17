@@ -11,10 +11,8 @@ type JsonTime time.Time
 
 func (jt *JsonTime) UnmarshalJSON(b []byte) error {
 	s := string(b)
-	// The API returns timestamps as numbers, not strings.
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-		// If it's not a number, try to parse it as a standard time string.
 		t, err := time.Parse(`"`+time.RFC3339+`"`, s)
 		if err != nil {
 			return err
@@ -134,6 +132,32 @@ type GPO struct {
 // OU represents a BloodHound OU object.
 type OU struct {
 	BaseEntity
+}
+
+// BaseAzureEntity represents the common properties for all Azure objects.
+type BaseAzureEntity struct {
+	ObjectID   string `json:"objectid"`
+	Name       string `json:"name"`
+	SystemTags string `json:"system_tags"`
+	ObjectType string `json:"type"`
+}
+
+// AzureUser represents a BloodHound Azure User object.
+type AzureUser struct {
+	BaseAzureEntity
+	UserPrincipalName string `json:"userprincipalname"`
+	Enabled           bool   `json:"enabled"`
+}
+
+// AzureGroup represents a BloodHound Azure Group object.
+type AzureGroup struct {
+	BaseAzureEntity
+}
+
+// AzureVM represents a BloodHound Azure VM object.
+type AzureVM struct {
+	BaseAzureEntity
+	OperatingSystem string `json:"operatingsystem"`
 }
 
 // EntityAdmin represents a principal with admin rights to another entity.

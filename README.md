@@ -86,4 +86,16 @@ func main() {
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
+## Testing
+
+To run the test suite for this package, navigate to the `bloodhound-go` directory and use the standard Go test command:
+
+```bash
+# Run all tests
+go test
+
+# Run tests with verbose output to see details for each test case
+go test -v
 ```
+
+The tests use mock HTTP servers to simulate the BloodHound API and do not require a live BloodHound instance to run.
