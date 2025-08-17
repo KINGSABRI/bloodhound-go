@@ -297,7 +297,7 @@ type AttackPath struct {
 
 // AttackPathsResponse wraps a list of attack paths.
 type AttackPathsResponse struct {
-	Data []AttackPath `json:"data"`
+	Data json.RawMessage `json:"data"`
 }
 
 // AttackPathFinding represents a single attack path finding.
@@ -307,7 +307,7 @@ type AttackPathFinding struct {
 
 // AttackPathFindingsResponse wraps a list of attack path findings.
 type AttackPathFindingsResponse struct {
-	Data []AttackPathFinding `json:"data"`
+	Data json.RawMessage `json:"data"`
 }
 
 // ForeignPrincipal represents a user or group from a foreign domain.
@@ -321,4 +321,38 @@ type ForeignPrincipal struct {
 // ForeignPrincipalsResponse wraps a list of foreign principals.
 type ForeignPrincipalsResponse struct {
 	Data json.RawMessage `json:"data"`
+}
+
+// ShortestPathRequest is the payload for a shortest path query.
+type ShortestPathRequest struct {
+	StartNode  string `json:"start_node"`
+	EndNode    string `json:"end_node"`
+	EdgeFilter string `json:"edge_filter"`
+}
+
+// GraphNodeProperties represents the properties of a node in a graph response.
+type GraphNodeProperties struct {
+	Name       string `json:"name"`
+	Label      string `json:"label"`
+	ObjectID   string `json:"objectid"`
+	SystemTags string `json:"system_tags"`
+}
+
+// GraphEdge represents an edge in a graph response.
+type GraphEdge struct {
+	Source string `json:"source"`
+	Target string `json:"target"`
+	Label  string `json:"label"`
+	Kind   string `json:"kind"`
+}
+
+// ShortestPathData represents the nodes and edges of the shortest path graph.
+type ShortestPathData struct {
+	Nodes map[string]GraphNodeProperties `json:"nodes"`
+	Edges []GraphEdge                    `json:"edges"`
+}
+
+// ShortestPathResponse wraps the response from a shortest path query.
+type ShortestPathResponse struct {
+	Data ShortestPathData `json:"data"`
 }

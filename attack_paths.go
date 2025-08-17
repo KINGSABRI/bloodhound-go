@@ -17,11 +17,15 @@ func (c *Client) ListAttackPaths() ([]AttackPath, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	var response AttackPathsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	var rawResponse AttackPathsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
 		return nil, err
 	}
-	return response.Data, nil
+	var finalResponse []AttackPath
+	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
+		return []AttackPath{}, nil
+	}
+	return finalResponse, nil
 }
 
 // ListAttackPathFindings fetches the list of attack path findings.
@@ -36,9 +40,13 @@ func (c *Client) ListAttackPathFindings() ([]AttackPathFinding, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	var response AttackPathFindingsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+	var rawResponse AttackPathFindingsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
 		return nil, err
 	}
-	return response.Data, nil
+	var finalResponse []AttackPathFinding
+	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
+		return []AttackPathFinding{}, nil
+	}
+	return finalResponse, nil
 }
