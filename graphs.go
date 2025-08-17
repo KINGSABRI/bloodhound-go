@@ -1,27 +1,26 @@
 package bloodhound
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
-// GetShortestPath calculates the shortest path between two nodes in the graph.
-func (c *Client) GetShortestPath(startNodeID, endNodeID string) (*ShortestPathResponse, error) {
+// GetShortestPath calculates the shortest path between two nodes in the graph,
+// optionally filtering by a list of relationship kinds.
+func (c *Client) GetShortestPath(startNodeID, endNodeID string, relationshipKinds []string) (*ShortestPathResponse, error) {
 	shortestPathURL := c.baseURL.JoinPath("/api/v2/graphs/shortest-path")
-
-	requestBody := ShortestPathRequest{
-		StartNode: startNodeID,
-		EndNode:   endNodeID,
+	params := url.Values{}
+	params.Add("start_node", startNodeID)
+	params.Add("end_node", endNodeID)
+	if len(relationshipKinds) > 0 {
+		params.Add("relationship_kinds", strings.Join(relationshipKinds, ","))
 	}
+	shortestPathURL.RawQuery = params.Encode()
 
-	payload, err := json.Marshal(requestBody)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal shortest path request: %w", err)
-	}
-
-	req, err := c.newAuthenticatedRequest(http.MethodPost, shortestPathURL.String(), bytes.NewBuffer(payload))
+	req, err := c.newAuthenticatedRequest(http.MethodGet, shortestPathURL.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create shortest path request: %w", err)
 	}

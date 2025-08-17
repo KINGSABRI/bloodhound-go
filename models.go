@@ -323,13 +323,6 @@ type ForeignPrincipalsResponse struct {
 	Data json.RawMessage `json:"data"`
 }
 
-// ShortestPathRequest is the payload for a shortest path query.
-type ShortestPathRequest struct {
-	StartNode  string `json:"start_node"`
-	EndNode    string `json:"end_node"`
-	EdgeFilter string `json:"edge_filter"`
-}
-
 // GraphNodeProperties represents the properties of a node in a graph response.
 type GraphNodeProperties struct {
 	Name       string `json:"name"`
