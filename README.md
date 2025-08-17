@@ -24,7 +24,7 @@ A comprehensive, type-safe, and production-ready Go client for the official [Blo
 ## Installation
 
 ```bash
-go get github.com/user/bloodhound-go
+go get github.com/KINGSABRI/bloodhound-go
 ```
 
 ## Usage Example
@@ -38,7 +38,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/user/bloodhound-go"
+	"github.com/KINGSABRI/bloodhound-go"
 )
 
 func main() {
