@@ -8,53 +8,49 @@ import (
 )
 
 // GetGPO fetches a single GPO by its Object ID (SID).
-func (c *Client) GetGPO(objectID string) (*GPO, *BaseEntity, error) {
+func (c *Client) GetGPO(objectID string) (*GPO, error) {
 	url := c.baseURL.JoinPath("/api/v2/gpos/", objectID)
 	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, nil, fmt.Errorf("get gpo failed with status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("get gpo failed with status code: %d", resp.StatusCode)
 	}
 
 	var response struct {
 		Data struct {
-			Props      GPO        `json:"props"`
-			BaseEntity BaseEntity `json:"base"`
+			Props GPO `json:"props"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, nil, fmt.Errorf("failed to decode get gpo response: %w", err)
+		return nil, fmt.Errorf("failed to decode get gpo response: %w", err)
 	}
-	response.Data.Props.ObjectType = "GPO"
-	return &response.Data.Props, &response.Data.BaseEntity, nil
+	gpo := response.Data.Props
+	gpo.ObjectType = "GPO"
+	return &gpo, nil
 }
 
 // GetGPOByName fetches a single GPO by its name.
-func (c *Client) GetGPOByName(gpoName string) (*GPO, *BaseEntity, error) {
+func (c *Client) GetGPOByName(gpoName string) (*GPO, error) {
 	searchResponse, err := c.Search(gpoName, "GPO")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	for _, result := range searchResponse.Data {
 		if strings.EqualFold(result.Name, gpoName) {
-			fullGPO, baseEntity, err := c.GetGPO(result.ObjectID)
-			if err != nil {
-				return nil, nil, err
-			}
-			return fullGPO, baseEntity, nil
+			return c.GetGPO(result.ObjectID)
 		}
 	}
 
-	return nil, nil, fmt.Errorf("gpo not found: %s", gpoName)
+	return nil, fmt.Errorf("gpo not found: %s", gpoName)
 }
 
 // GetGPOControllers fetches the controllers of a given GPO.

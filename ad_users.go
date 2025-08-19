@@ -8,53 +8,68 @@ import (
 )
 
 // GetADUser fetches a single AD user by their Object ID (SID).
-func (c *Client) GetADUser(objectID string) (*ADUser, *BaseEntity, error) {
+func (c *Client) GetADUser(objectID string) (*ADUser, error) {
 	url := c.baseURL.JoinPath("/api/v2/users/", objectID)
 	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, nil, fmt.Errorf("get ad user failed with status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("get ad user failed with status code: %d", resp.StatusCode)
 	}
 
 	var response struct {
 		Data struct {
-			Props      ADUser     `json:"props"`
-			BaseEntity BaseEntity `json:"base"`
+			Props                 ADUser `json:"props"`
+			AdminRights           int    `json:"adminRights"`
+			ConstrainedDelegation int    `json:"constrainedDelegation"`
+			Controllables         int    `json:"controllables"`
+			Controllers           int    `json:"controllers"`
+			DCOMRights            int    `json:"dcomRights"`
+			GroupMembership       int    `json:"groupMembership"`
+			PSRemoteRights        int    `json:"psRemoteRights"`
+			RDPRights             int    `json:"rdpRights"`
+			Sessions              int    `json:"sessions"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, nil, fmt.Errorf("failed to decode get ad user response: %w", err)
+		return nil, fmt.Errorf("failed to decode get ad user response: %w", err)
 	}
-	response.Data.Props.ObjectType = "User"
-	return &response.Data.Props, &response.Data.BaseEntity, nil
+
+	user := response.Data.Props
+	user.ObjectType = "User"
+	user.AdminRights = response.Data.AdminRights
+	user.ConstrainedDelegation = response.Data.ConstrainedDelegation
+	user.Controllables = response.Data.Controllables
+	user.Controllers = response.Data.Controllers
+	user.DCOMRights = response.Data.DCOMRights
+	user.GroupMembership = response.Data.GroupMembership
+	user.PSRemoteRights = response.Data.PSRemoteRights
+	user.RDPRights = response.Data.RDPRights
+	user.Sessions = response.Data.Sessions
+	return &user, nil
 }
 
 // GetADUserByName fetches a single AD user by their name.
-func (c *Client) GetADUserByName(userName string) (*ADUser, *BaseEntity, error) {
+func (c *Client) GetADUserByName(userName string) (*ADUser, error) {
 	searchResponse, err := c.Search(userName, "User")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	for _, result := range searchResponse.Data {
 		if strings.EqualFold(result.Name, userName) {
-			fullUser, baseEntity, err := c.GetADUser(result.ObjectID)
-			if err != nil {
-				return nil, nil, err
-			}
-			return fullUser, baseEntity, nil
+			return c.GetADUser(result.ObjectID)
 		}
 	}
 
-	return nil, nil, fmt.Errorf("user not found: %s", userName)
+	return nil, fmt.Errorf("user not found: %s", userName)
 }
 
 // GetADUserAdminRights fetches the admin rights for a given AD user.
@@ -75,7 +90,6 @@ func (c *Client) GetADUserAdminRights(objectID string) ([]EntityAdmin, error) {
 	}
 	var finalResponse []EntityAdmin
 	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		// If it's not a list, it's probably a number (0), so we return an empty list
 		return []EntityAdmin{}, nil
 	}
 	return finalResponse, nil
@@ -152,7 +166,7 @@ func (c *Client) GetADUserDCOMRights(objectID string) ([]Privilege, error) {
 
 // GetADUserPSRemoteRights fetches the PSRemote rights for a given AD user.
 func (c *Client) GetADUserPSRemoteRights(objectID string) ([]Privilege, error) {
-	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/psremote-rights")
+	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/ps-remote-rights")
 	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
 		return nil, err

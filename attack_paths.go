@@ -30,7 +30,7 @@ func (c *Client) ListAttackPaths() ([]AttackPath, error) {
 
 // ListAttackPathFindings fetches the list of attack path findings.
 func (c *Client) ListAttackPathFindings() ([]AttackPathFinding, error) {
-	url := c.baseURL.JoinPath("/api/v2/attack-paths/findings")
+	url := c.baseURL.JoinPath("/api/v2/findings")
 	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
 		return nil, err

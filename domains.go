@@ -8,53 +8,49 @@ import (
 )
 
 // GetDomain fetches a single domain by its Object ID (SID).
-func (c *Client) GetDomain(objectID string) (*Domain, *BaseEntity, error) {
+func (c *Client) GetDomain(objectID string) (*Domain, error) {
 	url := c.baseURL.JoinPath("/api/v2/domains/", objectID)
 	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, nil, fmt.Errorf("get domain failed with status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("get domain failed with status code: %d", resp.StatusCode)
 	}
 
 	var response struct {
 		Data struct {
-			Props      Domain     `json:"props"`
-			BaseEntity BaseEntity `json:"base"`
+			Props Domain `json:"props"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, nil, fmt.Errorf("failed to decode get domain response: %w", err)
+		return nil, fmt.Errorf("failed to decode get domain response: %w", err)
 	}
-	response.Data.Props.ObjectType = "Domain"
-	return &response.Data.Props, &response.Data.BaseEntity, nil
+	domain := response.Data.Props
+	domain.ObjectType = "Domain"
+	return &domain, nil
 }
 
 // GetDomainByName fetches a single domain by its name.
-func (c *Client) GetDomainByName(domainName string) (*Domain, *BaseEntity, error) {
+func (c *Client) GetDomainByName(domainName string) (*Domain, error) {
 	searchResponse, err := c.Search(domainName, "Domain")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	for _, result := range searchResponse.Data {
 		if strings.EqualFold(result.Name, domainName) {
-			fullDomain, baseEntity, err := c.GetDomain(result.ObjectID)
-			if err != nil {
-				return nil, nil, err
-			}
-			return fullDomain, baseEntity, nil
+			return c.GetDomain(result.ObjectID)
 		}
 	}
 
-	return nil, nil, fmt.Errorf("domain not found: %s", domainName)
+	return nil, fmt.Errorf("domain not found: %s", domainName)
 }
 
 // GetDomainUsers fetches the users in a given domain.

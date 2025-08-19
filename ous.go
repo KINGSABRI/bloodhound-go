@@ -8,53 +8,49 @@ import (
 )
 
 // GetOU fetches a single OU by its Object ID (SID).
-func (c *Client) GetOU(objectID string) (*OU, *BaseEntity, error) {
+func (c *Client) GetOU(objectID string) (*OU, error) {
 	url := c.baseURL.JoinPath("/api/v2/ous/", objectID)
 	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, nil, fmt.Errorf("get ou failed with status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("get ou failed with status code: %d", resp.StatusCode)
 	}
 
 	var response struct {
 		Data struct {
-			Props      OU         `json:"props"`
-			BaseEntity BaseEntity `json:"base"`
+			Props OU `json:"props"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, nil, fmt.Errorf("failed to decode get ou response: %w", err)
+		return nil, fmt.Errorf("failed to decode get ou response: %w", err)
 	}
-	response.Data.Props.ObjectType = "OU"
-	return &response.Data.Props, &response.Data.BaseEntity, nil
+	ou := response.Data.Props
+	ou.ObjectType = "OU"
+	return &ou, nil
 }
 
 // GetOUByName fetches a single OU by its name.
-func (c *Client) GetOUByName(ouName string) (*OU, *BaseEntity, error) {
+func (c *Client) GetOUByName(ouName string) (*OU, error) {
 	searchResponse, err := c.Search(ouName, "OU")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	for _, result := range searchResponse.Data {
 		if strings.EqualFold(result.Name, ouName) {
-			fullOU, baseEntity, err := c.GetOU(result.ObjectID)
-			if err != nil {
-				return nil, nil, err
-			}
-			return fullOU, baseEntity, nil
+			return c.GetOU(result.ObjectID)
 		}
 	}
 
-	return nil, nil, fmt.Errorf("ou not found: %s", ouName)
+	return nil, fmt.Errorf("ou not found: %s", ouName)
 }
 
 // GetOUComputers fetches the computers in a given OU.

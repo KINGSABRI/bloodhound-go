@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-// RunCypherQuery executes a raw Cypher query against the BloodHound graph.
+// RunCypherQuery executes a raw Cypher query against the BloodHound graph using POST.
 func (c *Client) RunCypherQuery(query string) (*CypherResponse, error) {
 	cypherURL := c.baseURL.JoinPath("/api/v2/graphs/cypher")
 

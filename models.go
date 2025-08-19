@@ -11,18 +11,30 @@ type JsonTime time.Time
 
 func (jt *JsonTime) UnmarshalJSON(b []byte) error {
 	s := string(b)
-	i, err := strconv.ParseInt(s, 10, 64)
-	if err != nil {
-		t, err := time.Parse(`"`+time.RFC3339+`"`, s)
-		if err != nil {
-			return err
-		}
-		*jt = JsonTime(t)
+	if s == "null" || s == "" || s == "0" {
+		*jt = JsonTime(time.Time{})
 		return nil
 	}
-	t := time.Unix(i, 0)
+	i, err := strconv.ParseInt(s, 10, 64)
+	if err == nil {
+		*jt = JsonTime(time.Unix(i, 0))
+		return nil
+	}
+	t, err := time.Parse(`"`+time.RFC3339+`"`, s)
+	if err != nil {
+		*jt = JsonTime(time.Time{})
+		return nil
+	}
 	*jt = JsonTime(t)
 	return nil
+}
+
+func (jt JsonTime) String() string {
+	t := time.Time(jt)
+	if t.IsZero() {
+		return "<not set>"
+	}
+	return t.Format("2006-01-02 15:04:05")
 }
 
 // LoginRequest represents the JSON body for a login request.
@@ -86,6 +98,13 @@ type CypherResponse struct {
 	Data json.RawMessage `json:"data"`
 }
 
+// CypherResponseData represents the complex data structure returned by a Cypher query.
+type CypherResponseData struct {
+	Records []map[string]interface{} `json:"records"`
+	Nodes   map[string]GraphNodeProperties `json:"nodes"`
+	Edges   []GraphEdge                    `json:"edges"`
+}
+
 // BaseEntity represents the common properties for all AD objects.
 type BaseEntity struct {
 	ObjectID          string   `json:"objectid"`
@@ -103,20 +122,51 @@ type Computer struct {
 	Enabled         bool     `json:"enabled"`
 	HasLAPS         bool     `json:"haslaps"`
 	LastSeen        JsonTime `json:"lastseen"`
+	// Relationship Counts
+	AdminRights    int `json:"adminRights"`
+	Controllables  int `json:"controllables"`
+	Controllers    int `json:"controllers"`
+	DCOMRights     int `json:"dcomRights"`
+	PSRemoteRights int `json:"psRemoteRights"`
+	RDPRights      int `json:"rdpRights"`
+	Sessions       int `json:"sessions"`
 }
 
 // ADUser represents a BloodHound AD User object.
 type ADUser struct {
 	BaseEntity
-	Enabled       bool `json:"enabled"`
-	HasSIDHistory bool `json:"hassidhistory"`
-	IsAdmin       bool `json:"admincount"`
+	Enabled            bool     `json:"enabled"`
+	HasSIDHistory      bool     `json:"hassidhistory"`
+	IsAdmin            bool     `json:"admincount"`
+	DontReqPreAuth     bool     `json:"dontreqpreauth"`
+	LastLogonTimestamp JsonTime `json:"lastlogontimestamp"`
+	// Relationship Counts
+	AdminRights           int `json:"adminRights"`
+	ConstrainedDelegation int `json:"constrainedDelegation"`
+	Controllables         int `json:"controllables"`
+	Controllers           int `json:"controllers"`
+	DCOMRights            int `json:"dcomRights"`
+	GroupMembership       int `json:"groupMembership"`
+	PSRemoteRights        int `json:"psRemoteRights"`
+	RDPRights             int `json:"rdpRights"`
+	Sessions              int `json:"sessions"`
 }
 
 // Group represents a BloodHound Group object.
 type Group struct {
 	BaseEntity
-	IsAdmin bool `json:"admincount"`
+	IsAdmin      bool   `json:"admincount"`
+	Description  string `json:"description"`
+	SamAccountName string `json:"samaccountname"`
+	// Relationship Counts
+	AdminRights    int `json:"adminRights"`
+	Controllables  int `json:"controllables"`
+	Controllers    int `json:"controllers"`
+	DCOMRights     int `json:"dcomRights"`
+	Members        int `json:"members"`
+	PSRemoteRights int `json:"psRemoteRights"`
+	RDPRights      int `json:"rdpRights"`
+	Sessions       int `json:"sessions"`
 }
 
 // Domain represents a BloodHound Domain object.
@@ -325,8 +375,8 @@ type ForeignPrincipalsResponse struct {
 
 // GraphNodeProperties represents the properties of a node in a graph response.
 type GraphNodeProperties struct {
-	Name       string `json:"label"` // The display name is in the 'label' field
-	Kind       string `json:"kind"`  // The object type is in the 'kind' field
+	Name       string `json:"label"`
+	Kind       string `json:"kind"`
 	ObjectID   string `json:"objectId"`
 	SystemTags string `json:"system_tags"`
 }
@@ -348,4 +398,34 @@ type ShortestPathData struct {
 // ShortestPathResponse wraps the response from a shortest path query.
 type ShortestPathResponse struct {
 	Data ShortestPathData `json:"data"`
+}
+
+// AssetGroup represents a BloodHound asset group.
+type AssetGroup struct {
+	ID          int        `json:"id"`
+	Name        string     `json:"name"`
+	Tag         string     `json:"tag"`
+	SystemGroup bool       `json:"system_group"`
+	Selectors   []Selector `json:"Selectors"`
+}
+
+// Selector represents a selector for an asset group.
+type Selector struct {
+	AssetGroupID int    `json:"asset_group_id"`
+	Name         string `json:"name"`
+	Selector     string `json:"selector"`
+}
+
+// AssetGroupsResponse wraps a list of asset groups.
+type AssetGroupsResponse struct {
+	Data struct {
+		AssetGroups []AssetGroup `json:"asset_groups"`
+	} `json:"data"`
+}
+
+// OwnershipUpdate represents a single update to the Owned asset group.
+type OwnershipUpdate struct {
+	SelectorName string `json:"selector_name"`
+	SID          string `json:"sid"`
+	Action       string `json:"action"`
 }

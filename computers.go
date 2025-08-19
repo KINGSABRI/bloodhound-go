@@ -8,58 +8,70 @@ import (
 )
 
 // GetComputer fetches a single computer by its Object ID (SID).
-func (c *Client) GetComputer(objectID string) (*Computer, *BaseEntity, error) {
+func (c *Client) GetComputer(objectID string) (*Computer, error) {
 	url := c.baseURL.JoinPath("/api/v2/computers/", objectID)
 	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, nil, fmt.Errorf("get computer failed with status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("get computer failed with status code: %d", resp.StatusCode)
 	}
 
 	var response struct {
 		Data struct {
-			Props      Computer   `json:"props"`
-			BaseEntity BaseEntity `json:"base"`
+			Props          Computer `json:"props"`
+			AdminRights    int      `json:"adminRights"`
+			Controllables  int      `json:"controllables"`
+			Controllers    int      `json:"controllers"`
+			DCOMRights     int      `json:"dcomRights"`
+			PSRemoteRights int      `json:"psRemoteRights"`
+			RDPRights      int      `json:"rdpRights"`
+			Sessions       int      `json:"sessions"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, nil, fmt.Errorf("failed to decode get computer response: %w", err)
+		return nil, fmt.Errorf("failed to decode get computer response: %w", err)
 	}
-	response.Data.Props.ObjectType = "Computer"
-	return &response.Data.Props, &response.Data.BaseEntity, nil
+
+	computer := response.Data.Props
+	computer.ObjectType = "Computer"
+	computer.AdminRights = response.Data.AdminRights
+	computer.Controllables = response.Data.Controllables
+	computer.Controllers = response.Data.Controllers
+	computer.DCOMRights = response.Data.DCOMRights
+	computer.PSRemoteRights = response.Data.PSRemoteRights
+	computer.RDPRights = response.Data.RDPRights
+	computer.Sessions = response.Data.Sessions
+
+	return &computer, nil
 }
 
 // GetComputerByName fetches a single computer by its name.
-func (c *Client) GetComputerByName(computerName string) (*Computer, *BaseEntity, error) {
+func (c *Client) GetComputerByName(computerName string) (*Computer, error) {
 	searchResponse, err := c.Search(computerName, "Computer")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	for _, result := range searchResponse.Data {
 		if strings.EqualFold(result.Name, computerName) {
-			fullComputer, baseEntity, err := c.GetComputer(result.ObjectID)
-			if err != nil {
-				return nil, nil, err
-			}
-			return fullComputer, baseEntity, nil
+			return c.GetComputer(result.ObjectID)
 		}
 	}
 
-	return nil, nil, fmt.Errorf("computer not found: %s", computerName)
+	return nil, fmt.Errorf("computer not found: %s", computerName)
 }
 
 // GetComputerAdmins fetches the list of principals with admin rights to a given computer.
 func (c *Client) GetComputerAdmins(objectID string) ([]EntityAdmin, error) {
-	url := c.baseURL.JoinPath("/api/v2/computers/", objectID, "/admins")
+	url := c.baseURL.JoinPath("/api/v2/computers/", objectID, "/admin-rights")
 	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
 		return nil, err
@@ -197,7 +209,7 @@ func (c *Client) GetComputerSQLAdmins(objectID string) ([]Privilege, error) {
 
 // GetComputerConstrainedDelegation fetches the constrained delegation privileges for a given computer.
 func (c *Client) GetComputerConstrainedDelegation(objectID string) ([]ConstrainedDelegation, error) {
-	url := c.baseURL.JoinPath("/api/v2/computers/", objectID, "/constrained-delegation")
+	url := c.baseURL.JoinPath("/api/v2/computers/", objectID, "/constrained-delegation-rights")
 	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
 		return nil, err
