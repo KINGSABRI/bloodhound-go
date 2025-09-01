@@ -60,10 +60,22 @@ func (c *Client) GetComputerByName(computerName string) (*Computer, error) {
 		return nil, err
 	}
 
+	if len(searchResponse.Data) == 0 && strings.Contains(computerName, "@") {
+		samAccountName := strings.Split(computerName, "@")[0]
+		searchResponse, err = c.Search(samAccountName, "Computer")
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	for _, result := range searchResponse.Data {
-		if strings.EqualFold(result.Name, computerName) {
+		if strings.EqualFold(result.Name, computerName) || (strings.Contains(computerName, "@") && strings.EqualFold(result.Name, strings.Split(computerName, "@")[0])) {
 			return c.GetComputer(result.ObjectID)
 		}
+	}
+
+	if len(searchResponse.Data) == 1 {
+		return c.GetComputer(searchResponse.Data[0].ObjectID)
 	}
 
 	return nil, fmt.Errorf("computer not found: %s", computerName)

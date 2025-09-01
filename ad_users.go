@@ -58,16 +58,36 @@ func (c *Client) GetADUser(objectID string) (*ADUser, error) {
 
 // GetADUserByName fetches a single AD user by their name.
 func (c *Client) GetADUserByName(userName string) (*ADUser, error) {
+	// First, try searching with the provided username directly
 	searchResponse, err := c.Search(userName, "User")
 	if err != nil {
 		return nil, err
 	}
 
+	// If the initial search yields no results and the username contains an "@",
+	// try searching for the part before the "@" as a fallback.
+	if len(searchResponse.Data) == 0 && strings.Contains(userName, "@") {
+		samAccountName := strings.Split(userName, "@")[0]
+		searchResponse, err = c.Search(samAccountName, "User")
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Now, process the results from the successful search
 	for _, result := range searchResponse.Data {
-		if strings.EqualFold(result.Name, userName) {
+		// Use EqualFold for case-insensitive comparison on the result's name
+		if strings.EqualFold(result.Name, userName) || (strings.Contains(userName, "@") && strings.EqualFold(result.Name, strings.Split(userName, "@")[0])) {
 			return c.GetADUser(result.ObjectID)
 		}
 	}
+
+	// If we still haven't found a match, try a direct hit on the first result if there's only one.
+	// This handles cases where the name in BH is slightly different (e.g. UPN vs SAM)
+	if len(searchResponse.Data) == 1 {
+		return c.GetADUser(searchResponse.Data[0].ObjectID)
+	}
+
 
 	return nil, fmt.Errorf("user not found: %s", userName)
 }

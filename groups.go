@@ -60,10 +60,22 @@ func (c *Client) GetGroupByName(groupName string) (*Group, error) {
 		return nil, err
 	}
 
+	if len(searchResponse.Data) == 0 && strings.Contains(groupName, "@") {
+		samAccountName := strings.Split(groupName, "@")[0]
+		searchResponse, err = c.Search(samAccountName, "Group")
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	for _, result := range searchResponse.Data {
-		if strings.EqualFold(result.Name, groupName) {
+		if strings.EqualFold(result.Name, groupName) || (strings.Contains(groupName, "@") && strings.EqualFold(result.Name, strings.Split(groupName, "@")[0])) {
 			return c.GetGroup(result.ObjectID)
 		}
+	}
+
+	if len(searchResponse.Data) == 1 {
+		return c.GetGroup(searchResponse.Data[0].ObjectID)
 	}
 
 	return nil, fmt.Errorf("group not found: %s", groupName)

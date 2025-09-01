@@ -135,6 +135,7 @@ type Computer struct {
 // ADUser represents a BloodHound AD User object.
 type ADUser struct {
 	BaseEntity
+	Description        string   `json:"description"`
 	Enabled            bool     `json:"enabled"`
 	HasSIDHistory      bool     `json:"hassidhistory"`
 	IsAdmin            bool     `json:"admincount"`
