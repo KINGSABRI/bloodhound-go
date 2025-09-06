@@ -2,6 +2,7 @@ package bloodhound
 
 import (
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -81,8 +82,17 @@ func (c *Client) do(req *http.Request, sanitizedBody []byte) (*http.Response, er
 		return nil, err
 	}
 
+	if resp.StatusCode == http.StatusUnauthorized {
+		var errorResponse ErrorResponse
+		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err == nil {
+			if len(errorResponse.Errors) > 0 {
+				return nil, fmt.Errorf(errorResponse.Errors[0].Message)
+			}
+		}
+	}
+
 	// Decompress gzipped responses
-	if resp.Header.Get("Content-Encoding") == "gzip" {
+	if resp.StatusCode != http.StatusNoContent && resp.Header.Get("Content-Encoding") == "gzip" {
 		reader, err := gzip.NewReader(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gzip reader for response: %w", err)

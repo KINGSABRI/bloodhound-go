@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
 	"strconv"
 )
@@ -24,7 +23,7 @@ func (c *Client) StartFileUploadJob() (*FileUploadJob, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("start file upload failed with status code: %d", resp.StatusCode)
 	}
 
@@ -36,39 +35,25 @@ func (c *Client) StartFileUploadJob() (*FileUploadJob, error) {
 	return &fileUploadResponse.Data, nil
 }
 
-// UploadFile uploads a chunk of a file to a file upload job.
-func (c *Client) UploadFile(jobID int, chunk []byte, chunkNumber, totalChunks int) error {
+// UploadFile uploads a file to a file upload job.
+func (c *Client) UploadFile(jobID int, content []byte, contentType string) error {
 	uploadURL := c.baseURL.JoinPath("/api/v2/file-upload/", strconv.Itoa(jobID))
 
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("file", "chunk.zip")
-	if err != nil {
-		return fmt.Errorf("failed to create form file: %w", err)
-	}
-	if _, err := io.Copy(part, bytes.NewReader(chunk)); err != nil {
-		return fmt.Errorf("failed to copy chunk to form file: %w", err)
-	}
-
-	writer.WriteField("resumableChunkNumber", strconv.Itoa(chunkNumber))
-	writer.WriteField("resumableTotalChunks", strconv.Itoa(totalChunks))
-	writer.Close()
-
-	req, err := c.newAuthenticatedRequest(http.MethodPost, uploadURL.String(), body)
+	req, err := c.newAuthenticatedRequest(http.MethodPost, uploadURL.String(), bytes.NewBuffer(content))
 	if err != nil {
 		return fmt.Errorf("failed to create upload file request: %w", err)
 	}
-	// This is a special case; override the content type.
-	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Content-Type", contentType)
 
-	resp, err := c.do(req, nil) // We don't log the binary chunk body
+	resp, err := c.do(req, nil)
 	if err != nil {
 		return fmt.Errorf("failed to execute upload file request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("upload file failed with status code: %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusAccepted {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("upload file failed with status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
 	return nil
@@ -88,9 +73,38 @@ func (c *Client) EndFileUploadJob(jobID int) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("end file upload failed with status code: %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted && resp.StatusCode != http.StatusNoContent {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("end file upload failed with status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
 	return nil
+}
+
+// ListFileUploadJobs lists all file upload jobs.
+func (c *Client) ListFileUploadJobs() ([]FileUploadJob, error) {
+	listURL := c.baseURL.JoinPath("/api/v2/file-upload")
+	req, err := c.newAuthenticatedRequest(http.MethodGet, listURL.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create list file upload jobs request: %w", err)
+	}
+
+	var jobsResponse struct {
+		Data []FileUploadJob `json:"data"`
+	}
+	resp, err := c.do(req, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute list file upload jobs request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("list file upload jobs failed with status code: %d", resp.StatusCode)
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&jobsResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode list file upload jobs response: %w", err)
+	}
+
+	return jobsResponse.Data, nil
 }

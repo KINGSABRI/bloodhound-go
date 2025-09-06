@@ -55,14 +55,15 @@ type SessionResponse struct {
 
 // User represents a BloodHound application user object.
 type User struct {
-	ID        string   `json:"id"`
-	Email     string   `json:"email"`
-	FirstName string   `json:"first_name"`
-	LastName  string   `json:"last_name"`
-	IsAdmin   bool     `json:"is_admin"`
-	UserDN    string   `json:"user_dn"`
-	CreatedAt JsonTime `json:"created_at"`
-	UpdatedAt JsonTime `json:"updated_at"`
+	ID            string   `json:"id"`
+	Email         string   `json:"email_address"`
+	FirstName     string   `json:"first_name"`
+	LastName      string   `json:"last_name"`
+	PrincipalName string   `json:"principal_name"`
+	IsAdmin       bool     `json:"is_admin"`
+	UserDN        string   `json:"user_dn"`
+	CreatedAt     JsonTime `json:"created_at"`
+	UpdatedAt     JsonTime `json:"updated_at"`
 }
 
 // UsersResponse wraps a list of users, as returned by the API.
@@ -574,7 +575,15 @@ type OwnershipUpdate struct {
 
 // FileUploadJob represents a file upload job.
 type FileUploadJob struct {
-	ID int `json:"id"`
+	ID         int       `json:"id"`
+	UserID     string    `json:"user_id"`
+	User       User      `json:"user"`
+	Status     int       `json:"status"`
+	StartTime  time.Time `json:"start_time"`
+	EndTime    time.Time `json:"end_time"`
+	LastIngest time.Time `json:"last_ingest"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 // FileUploadResponse wraps the response from a file upload.
@@ -588,6 +597,27 @@ type DomainTrust struct {
 	ObjectID   string `json:"objectID"`
 	ObjectType string `json:"label"`
 	IsTierZero bool   `json:"is_tier_zero"`
+}
+
+// ErrorDetail represents a single error in an API response.
+type ErrorDetail struct {
+	Context string `json:"context"`
+	Message string `json:"message"`
+}
+
+// ErrorResponse represents the error response from the API.
+type ErrorResponse struct {
+	HTTPStatus int           `json:"http_status"`
+	Timestamp  string        `json:"timestamp"`
+	RequestID  string        `json:"request_id"`
+	Errors     []ErrorDetail `json:"errors"`
+}
+
+// DeleteDatabaseRequest is the payload for deleting the database.
+type DeleteDatabaseRequest struct {
+	DeleteCollectedGraphData bool `json:"deleteCollectedGraphData"`
+	DeleteFileIngestHistory  bool `json:"deleteFileIngestHistory"`
+	DeleteDataQualityHistory bool `json:"deleteDataQualityHistory"`
 }
 
 // DomainTrustsResponse wraps a list of domain trusts.

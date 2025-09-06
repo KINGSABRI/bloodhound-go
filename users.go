@@ -78,7 +78,7 @@ func (c *Client) ListUsers() ([]User, error) {
 // GetUser fetches a single user by their ID.
 func (c *Client) GetUser(userID string) (User, error) {
 	var user User
-	userURL := c.baseURL.JoinPath("/api/v2/users/", userID)
+	userURL := c.baseURL.JoinPath("/api/v2/bloodhound-users/", userID)
 	req, err := c.newAuthenticatedRequest(http.MethodGet, userURL.String(), nil)
 	if err != nil {
 		return user, fmt.Errorf("failed to create get user request: %w", err)
