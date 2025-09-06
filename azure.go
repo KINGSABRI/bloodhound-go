@@ -65,7 +65,7 @@ func (c *Client) GetAzureUser(objectID string) (*AzureUser, error) {
 
 // GetAzureUserByName fetches a single Azure user by their User Principal Name.
 func (c *Client) GetAzureUserByName(userName string) (*AzureUser, error) {
-	searchResponse, err := c.Search(userName, "AZUser")
+	searchResponse, err := c.Search(userName, "AZUser", 0)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +113,7 @@ func (c *Client) GetAzureGroup(objectID string) (*AzureGroup, error) {
 
 // GetAzureGroupByName fetches a single Azure group by its name.
 func (c *Client) GetAzureGroupByName(groupName string) (*AzureGroup, error) {
-	searchResponse, err := c.Search(groupName, "AZGroup")
+	searchResponse, err := c.Search(groupName, "AZGroup", 0)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (c *Client) GetAzureVM(objectID string) (*AzureVM, error) {
 
 // GetAzureVMByName fetches a single Azure VM by its name.
 func (c *Client) GetAzureVMByName(vmName string) (*AzureVM, error) {
-	searchResponse, err := c.Search(vmName, "AZVM")
+	searchResponse, err := c.Search(vmName, "AZVM", 0)
 	if err != nil {
 		return nil, err
 	}

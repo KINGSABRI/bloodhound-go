@@ -43,7 +43,8 @@ func (c *Client) GetSelf() (User, error) {
 	return user, nil
 }
 
-// ListUsers fetches all users from the BloodHound instance.
+// ListUsers fetches a list of all BloodHound application users.
+// Note: This is for the application users, not the AD users in the graph.
 func (c *Client) ListUsers() ([]User, error) {
 	usersURL := c.baseURL.JoinPath("/api/v2/users")
 	req, err := c.newAuthenticatedRequest(http.MethodGet, usersURL.String(), nil)
@@ -66,7 +67,12 @@ func (c *Client) ListUsers() ([]User, error) {
 		return nil, fmt.Errorf("failed to decode list users response: %w", err)
 	}
 
-	return usersResponse.Data, nil
+	var finalResponse []User
+	if err := json.Unmarshal(usersResponse.Data, &finalResponse); err != nil {
+		return []User{}, nil
+	}
+
+	return finalResponse, nil
 }
 
 // GetUser fetches a single user by their ID.

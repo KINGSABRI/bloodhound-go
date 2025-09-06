@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -33,9 +34,11 @@ func (c *Client) GetADUser(objectID string) (*ADUser, error) {
 			Controllers           int    `json:"controllers"`
 			DCOMRights            int    `json:"dcomRights"`
 			GroupMembership       int    `json:"groupMembership"`
+			GPOs                  int    `json:"gpos"`
 			PSRemoteRights        int    `json:"psRemoteRights"`
 			RDPRights             int    `json:"rdpRights"`
 			Sessions              int    `json:"sessions"`
+			SQLAdminRights        int    `json:"sqlAdminRights"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
@@ -50,16 +53,18 @@ func (c *Client) GetADUser(objectID string) (*ADUser, error) {
 	user.Controllers = response.Data.Controllers
 	user.DCOMRights = response.Data.DCOMRights
 	user.GroupMembership = response.Data.GroupMembership
+	user.GPOs = response.Data.GPOs
 	user.PSRemoteRights = response.Data.PSRemoteRights
 	user.RDPRights = response.Data.RDPRights
 	user.Sessions = response.Data.Sessions
+	user.SQLAdminRights = response.Data.SQLAdminRights
 	return &user, nil
 }
 
 // GetADUserByName fetches a single AD user by their name.
 func (c *Client) GetADUserByName(userName string) (*ADUser, error) {
 	// First, try searching with the provided username directly
-	searchResponse, err := c.Search(userName, "User")
+	searchResponse, err := c.Search(userName, "User", 0)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +73,7 @@ func (c *Client) GetADUserByName(userName string) (*ADUser, error) {
 	// try searching for the part before the "@" as a fallback.
 	if len(searchResponse.Data) == 0 && strings.Contains(userName, "@") {
 		samAccountName := strings.Split(userName, "@")[0]
-		searchResponse, err = c.Search(samAccountName, "User")
+		searchResponse, err = c.Search(samAccountName, "User", 0)
 		if err != nil {
 			return nil, err
 		}
@@ -93,231 +98,275 @@ func (c *Client) GetADUserByName(userName string) (*ADUser, error) {
 }
 
 // GetADUserAdminRights fetches the admin rights for a given AD user.
-func (c *Client) GetADUserAdminRights(objectID string) ([]EntityAdmin, error) {
-	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/admin-rights")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetADUserAdminRights(objectID string, limit int) (EntityAdminsResponse, error) {
+	var rawResponse EntityAdminsResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/users/", objectID, "/admin-rights")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse EntityAdminsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []EntityAdmin
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []EntityAdmin{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetADUserSessions fetches the sessions for a given AD user.
-func (c *Client) GetADUserSessions(objectID string) ([]Session, error) {
-	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/sessions")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetADUserSessions(objectID string, limit int) (SessionsResponse, error) {
+	var rawResponse SessionsResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/users/", objectID, "/sessions")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse SessionsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Session
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Session{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetADUserRDPRights fetches the RDP rights for a given AD user.
-func (c *Client) GetADUserRDPRights(objectID string) ([]Privilege, error) {
-	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/rdp-rights")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetADUserRDPRights(objectID string, limit int) (PrivilegesResponse, error) {
+	var rawResponse PrivilegesResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/users/", objectID, "/rdp-rights")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse PrivilegesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Privilege
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Privilege{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetADUserDCOMRights fetches the DCOM rights for a given AD user.
-func (c *Client) GetADUserDCOMRights(objectID string) ([]Privilege, error) {
-	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/dcom-rights")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetADUserDCOMRights(objectID string, limit int) (PrivilegesResponse, error) {
+	var rawResponse PrivilegesResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/users/", objectID, "/dcom-rights")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse PrivilegesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Privilege
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Privilege{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetADUserPSRemoteRights fetches the PSRemote rights for a given AD user.
-func (c *Client) GetADUserPSRemoteRights(objectID string) ([]Privilege, error) {
-	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/ps-remote-rights")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetADUserPSRemoteRights(objectID string, limit int) (PrivilegesResponse, error) {
+	var rawResponse PrivilegesResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/users/", objectID, "/ps-remote-rights")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse PrivilegesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Privilege
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Privilege{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetADUserSQLAdminRights fetches the SQL admin rights for a given AD user.
-func (c *Client) GetADUserSQLAdminRights(objectID string) ([]Privilege, error) {
-	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/sql-admin-rights")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetADUserSQLAdminRights(objectID string, limit int) (PrivilegesResponse, error) {
+	var rawResponse PrivilegesResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/users/", objectID, "/sql-admin-rights")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse PrivilegesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Privilege
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Privilege{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetADUserConstrainedDelegationRights fetches the constrained delegation rights for a given AD user.
-func (c *Client) GetADUserConstrainedDelegationRights(objectID string) ([]ConstrainedDelegation, error) {
-	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/constrained-delegation-rights")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetADUserConstrainedDelegationRights(objectID string, limit int) (ConstrainedDelegationsResponse, error) {
+	var rawResponse ConstrainedDelegationsResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/users/", objectID, "/constrained-delegation-rights")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse ConstrainedDelegationsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []ConstrainedDelegation
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []ConstrainedDelegation{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetADUserGroupMembership fetches the group membership for a given AD user.
-func (c *Client) GetADUserGroupMembership(objectID string) ([]GroupMembership, error) {
-	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/memberships")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetADUserGroupMembership(objectID string, limit int) (GroupMembershipsResponse, error) {
+	var rawResponse GroupMembershipsResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/users/", objectID, "/memberships")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse GroupMembershipsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []GroupMembership
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []GroupMembership{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetADUserControllers fetches the controllers of a given AD user.
-func (c *Client) GetADUserControllers(objectID string) ([]Controller, error) {
-	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/controllers")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetADUserControllers(objectID string, limit int) (ControllersResponse, error) {
+	var rawResponse ControllersResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/users/", objectID, "/controllers")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse ControllersResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Controller
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Controller{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetADUserControllables fetches the controllables of a given AD user.
-func (c *Client) GetADUserControllables(objectID string) ([]Controllable, error) {
-	url := c.baseURL.JoinPath("/api/v2/users/", objectID, "/controllables")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetADUserControllables(objectID string, limit int) (ControllablesResponse, error) {
+	var rawResponse ControllablesResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/users/", objectID, "/controllables")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse ControllablesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Controllable
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Controllable{}, nil
+	return rawResponse, nil
+}
+
+// ResolveUserIdentity takes a user identity (name or SID) and returns the SID.
+// If a name is provided, it will be resolved via the search API.
+func (c *Client) ResolveUserIdentity(identity string) (string, error) {
+	// If the identity looks like a SID, return it directly.
+	if strings.HasPrefix(strings.ToUpper(identity), "S-1-5-") {
+		return identity, nil
 	}
-	return finalResponse, nil
+
+	// If not a SID, assume it's a name and search for it.
+	searchResponse, err := c.Search(identity, "User", 0)
+	if err != nil {
+		return "", fmt.Errorf("search failed for user '%s': %w", identity, err)
+	}
+
+	if len(searchResponse.Data) == 0 {
+		return "", fmt.Errorf("no user found matching name '%s'", identity)
+	}
+
+	// Prefer an exact (case-insensitive) match if there are multiple results.
+	for _, result := range searchResponse.Data {
+		if strings.EqualFold(result.Name, identity) {
+			return result.ObjectID, nil
+		}
+	}
+
+	// If no exact match was found and there are multiple results, it's ambiguous.
+	if len(searchResponse.Data) > 1 {
+		return "", fmt.Errorf("multiple users found matching name '%s'. Please be more specific or use the Object ID (SID)", identity)
+	}
+
+	// Only one result, so we'll use it.
+	return searchResponse.Data[0].ObjectID, nil
 }

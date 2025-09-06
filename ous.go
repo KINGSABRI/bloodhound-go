@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
-// GetOU fetches a single OU by its Object ID (SID).
+// GetOU fetches a single OU by its Object ID (GUID).
 func (c *Client) GetOU(objectID string) (*OU, error) {
-	url := c.baseURL.JoinPath("/api/v2/ous/", objectID)
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+	apiUrl := c.baseURL.JoinPath("/api/v2/ous/", objectID)
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +27,11 @@ func (c *Client) GetOU(objectID string) (*OU, error) {
 
 	var response struct {
 		Data struct {
-			Props OU `json:"props"`
+			Props     OU  `json:"props"`
+			Computers int `json:"computers"`
+			GPOs      int `json:"gpos"`
+			Groups    int `json:"groups"`
+			Users     int `json:"users"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
@@ -34,12 +39,16 @@ func (c *Client) GetOU(objectID string) (*OU, error) {
 	}
 	ou := response.Data.Props
 	ou.ObjectType = "OU"
+	ou.Computers = response.Data.Computers
+	ou.GPOs = response.Data.GPOs
+	ou.Groups = response.Data.Groups
+	ou.Users = response.Data.Users
 	return &ou, nil
 }
 
 // GetOUByName fetches a single OU by its name.
 func (c *Client) GetOUByName(ouName string) (*OU, error) {
-	searchResponse, err := c.Search(ouName, "OU")
+	searchResponse, err := c.Search(ouName, "OU", 0)
 	if err != nil {
 		return nil, err
 	}
@@ -53,100 +62,98 @@ func (c *Client) GetOUByName(ouName string) (*OU, error) {
 	return nil, fmt.Errorf("ou not found: %s", ouName)
 }
 
-// GetOUComputers fetches the computers in a given OU.
-func (c *Client) GetOUComputers(objectID string) ([]Computer, error) {
-	url := c.baseURL.JoinPath("/api/v2/ous/", objectID, "/computers")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+// GetOUGroups fetches the groups in a given OU.
+func (c *Client) GetOUGroups(objectID string, limit int) (GroupsResponse, error) {
+	var rawResponse GroupsResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/ous/", objectID, "/groups")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse struct {
-		Data json.RawMessage `json:"data"`
-	}
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Computer
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Computer{}, nil
+	return rawResponse, nil
+}
+
+// GetOUComputers fetches the computers in a given OU.
+func (c *Client) GetOUComputers(objectID string, limit int) (ComputersResponse, error) {
+	var rawResponse ComputersResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/ous/", objectID, "/computers")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
 	}
-	return finalResponse, nil
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
+	if err != nil {
+		return rawResponse, err
+	}
+	resp, err := c.do(req, nil)
+	if err != nil {
+		return rawResponse, err
+	}
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
+		return rawResponse, err
+	}
+	return rawResponse, nil
 }
 
 // GetOUUsers fetches the users in a given OU.
-func (c *Client) GetOUUsers(objectID string) ([]ADUser, error) {
-	url := c.baseURL.JoinPath("/api/v2/ous/", objectID, "/users")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetOUUsers(objectID string, limit int) (UsersResponse, error) {
+	var rawResponse UsersResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/ous/", objectID, "/users")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse struct {
-		Data json.RawMessage `json:"data"`
-	}
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []ADUser
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []ADUser{}, nil
-	}
-	return finalResponse, nil
-}
-
-// GetOUGroups fetches the groups in a given OU.
-func (c *Client) GetOUGroups(objectID string) ([]Group, error) {
-	url := c.baseURL.JoinPath("/api/v2/ous/", objectID, "/groups")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.do(req, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	var rawResponse struct {
-		Data json.RawMessage `json:"data"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
-	}
-	var finalResponse []Group
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Group{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetOUControllers fetches the controllers of a given OU.
-func (c *Client) GetOUControllers(objectID string) ([]Controller, error) {
-	url := c.baseURL.JoinPath("/api/v2/ous/", objectID, "/controllers")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetOUControllers(objectID string, limit int) (ControllersResponse, error) {
+	var rawResponse ControllersResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/ous/", objectID, "/controllers")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse ControllersResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Controller
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Controller{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }

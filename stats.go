@@ -20,7 +20,7 @@ func (c *Client) GetGlobalStats() ([]Stat, error) {
 	}
 
 	var stats []Stat
-	if err := json.Unmarshal(resp.Data, &stats); err != nil {
+	if err := json.Unmarshal(resp, &stats); err != nil {
 		return nil, fmt.Errorf("failed to decode stats response: %w", err)
 	}
 	return stats, nil
@@ -55,7 +55,7 @@ func (c *Client) GetDomainStats(domainName string) (*DomainStats, error) {
 		var result []struct {
 			Count int `json:"count"`
 		}
-		if err := json.Unmarshal(resp.Data, &result); err != nil {
+		if err := json.Unmarshal(resp, &result); err != nil {
 			return err
 		}
 		if len(result) > 0 {

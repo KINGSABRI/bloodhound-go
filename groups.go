@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 // GetGroup fetches a single group by its Object ID (SID).
 func (c *Client) GetGroup(objectID string) (*Group, error) {
-	url := c.baseURL.JoinPath("/api/v2/groups/", objectID)
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+	apiUrl := c.baseURL.JoinPath("/api/v2/groups/", objectID)
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -55,14 +56,14 @@ func (c *Client) GetGroup(objectID string) (*Group, error) {
 
 // GetGroupByName fetches a single group by its name.
 func (c *Client) GetGroupByName(groupName string) (*Group, error) {
-	searchResponse, err := c.Search(groupName, "Group")
+	searchResponse, err := c.Search(groupName, "Group", 0)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(searchResponse.Data) == 0 && strings.Contains(groupName, "@") {
 		samAccountName := strings.Split(groupName, "@")[0]
-		searchResponse, err = c.Search(samAccountName, "Group")
+		searchResponse, err = c.Search(samAccountName, "Group", 0)
 		if err != nil {
 			return nil, err
 		}
@@ -82,185 +83,193 @@ func (c *Client) GetGroupByName(groupName string) (*Group, error) {
 }
 
 // GetGroupMembers fetches the members of a given group.
-func (c *Client) GetGroupMembers(objectID string) ([]GroupMembership, error) {
-	url := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/members")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetGroupMembers(objectID string, limit int) (GroupMembershipsResponse, error) {
+	var rawResponse GroupMembershipsResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/members")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse GroupMembershipsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []GroupMembership
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []GroupMembership{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetGroupMemberships fetches the group memberships for a given group.
-func (c *Client) GetGroupMemberships(objectID string) ([]GroupMembership, error) {
-	url := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/memberships")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetGroupMemberships(objectID string, limit int) (GroupMembershipsResponse, error) {
+	var rawResponse GroupMembershipsResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/memberships")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse GroupMembershipsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []GroupMembership
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []GroupMembership{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetGroupControllers fetches the controllers of a given group.
-func (c *Client) GetGroupControllers(objectID string) ([]Controller, error) {
-	url := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/controllers")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetGroupControllers(objectID string, limit int) (ControllersResponse, error) {
+	var rawResponse ControllersResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/controllers")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse ControllersResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Controller
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Controller{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetGroupControllables fetches the controllables of a given group.
-func (c *Client) GetGroupControllables(objectID string) ([]Controllable, error) {
-	url := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/controllables")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetGroupControllables(objectID string, limit int) (ControllablesResponse, error) {
+	var rawResponse ControllablesResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/controllables")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse ControllablesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Controllable
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Controllable{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetGroupDCOMRights fetches principals with DCOM rights on the group.
-func (c *Client) GetGroupDCOMRights(objectID string) ([]Privilege, error) {
-	url := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/dcom-rights")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetGroupDCOMRights(objectID string, limit int) (PrivilegesResponse, error) {
+	var rawResponse PrivilegesResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/dcom-rights")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse PrivilegesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Privilege
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Privilege{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetGroupPSRemoteRights fetches principals with PSRemote rights on the group.
-func (c *Client) GetGroupPSRemoteRights(objectID string) ([]Privilege, error) {
-	url := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/ps-remote-rights")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetGroupPSRemoteRights(objectID string, limit int) (PrivilegesResponse, error) {
+	var rawResponse PrivilegesResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/ps-remote-rights")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse PrivilegesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Privilege
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Privilege{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetGroupRDPRights fetches principals with RDP rights on the group.
-func (c *Client) GetGroupRDPRights(objectID string) ([]Privilege, error) {
-	url := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/rdp-rights")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetGroupRDPRights(objectID string, limit int) (PrivilegesResponse, error) {
+	var rawResponse PrivilegesResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/rdp-rights")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse PrivilegesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Privilege
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Privilege{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
 
 // GetGroupSessions fetches sessions on the group.
-func (c *Client) GetGroupSessions(objectID string) ([]Session, error) {
-	url := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/sessions")
-	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+func (c *Client) GetGroupSessions(objectID string, limit int) (SessionsResponse, error) {
+	var rawResponse SessionsResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/groups/", objectID, "/sessions")
+	params := url.Values{}
+	if limit > 0 {
+		params.Add("limit", fmt.Sprintf("%d", limit))
+	}
+	apiUrl.RawQuery = params.Encode()
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	resp, err := c.do(req, nil)
 	if err != nil {
-		return nil, err
+		return rawResponse, err
 	}
 	defer resp.Body.Close()
-	var rawResponse SessionsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&rawResponse); err != nil {
-		return nil, err
+		return rawResponse, err
 	}
-	var finalResponse []Session
-	if err := json.Unmarshal(rawResponse.Data, &finalResponse); err != nil {
-		return []Session{}, nil
-	}
-	return finalResponse, nil
+	return rawResponse, nil
 }
