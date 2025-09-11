@@ -44,6 +44,8 @@ func (c *Client) ListSavedQueries() ([]SavedQuery, error) {
 	return response.Data, nil
 }
 
+var ErrDuplicateQueryName = fmt.Errorf("duplicate name for saved query")
+
 // CreateSavedQuery creates a new saved Cypher query.
 func (c *Client) CreateSavedQuery(name, query, description string, public bool) (*SavedQuery, error) {
 	var savedQuery SavedQuery
@@ -61,6 +63,22 @@ func (c *Client) CreateSavedQuery(name, query, description string, public bool) 
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusBadRequest {
+		var errorResponse ErrorResponse
+		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err == nil {
+			for _, e := range errorResponse.Errors {
+				if e.Message == "duplicate name for saved query: please choose a different name" {
+					return nil, ErrDuplicateQueryName
+				}
+			}
+		}
+	}
+
+	if resp.StatusCode != http.StatusCreated {
+		return nil, fmt.Errorf("failed to create saved query with status code: %d", resp.StatusCode)
+	}
+
 	if err := json.NewDecoder(resp.Body).Decode(&savedQuery); err != nil {
 		return nil, err
 	}
@@ -138,10 +156,19 @@ func (c *Client) RunCypherQuery(query string) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		var errorResponse ErrorResponse
+		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err == nil {
+			return nil, fmt.Errorf("cypher query failed: %s", errorResponse.Errors[0].Message)
+		}
+		return nil, fmt.Errorf("cypher query failed with status code: %d", resp.StatusCode)
+	}
+
 	if resp.ContentLength == 0 {
 		return []byte(`{"data": {}}`), nil
 	}
-	defer resp.Body.Close()
 
 	var response struct {
 		Data json.RawMessage `json:"data"`

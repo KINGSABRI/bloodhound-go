@@ -70,3 +70,30 @@ func (c *Client) UpdateOwnedStatus(updates []OwnershipUpdate) error {
 
 	return nil
 }
+
+// UpdateAssetGroupMembers adds or removes objects from an asset group.
+func (c *Client) UpdateAssetGroupMembers(assetGroupID int, updates []AssetGroupSelectorUpdate) error {
+	updateURL := c.baseURL.JoinPath("/api/v2/asset-groups/", fmt.Sprintf("%d", assetGroupID), "/selectors")
+
+	payload, err := json.Marshal(updates)
+	if err != nil {
+		return fmt.Errorf("failed to marshal asset group update payload: %w", err)
+	}
+
+	req, err := c.newAuthenticatedRequest("PUT", updateURL.String(), bytes.NewBuffer(payload))
+	if err != nil {
+		return fmt.Errorf("failed to create asset group update request: %w", err)
+	}
+
+	resp, err := c.do(req, nil)
+	if err != nil {
+		return fmt.Errorf("failed to execute asset group update request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("asset group update failed with status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}

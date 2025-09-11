@@ -5,19 +5,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
-// GetShortestPath calculates the shortest path between two nodes in the graph,
-// optionally filtering by a list of relationship kinds.
-func (c *Client) GetShortestPath(startNodeID, endNodeID string, relationshipKinds []string) (*ShortestPathResponse, error) {
-	shortestPathURL := c.baseURL.JoinPath("/api/v2/graphs/shortest-path")
+// GetShortestPath finds the shortest path between two nodes.
+func (c *Client) GetShortestPath(startNode, endNode, relationshipKinds string) (*ShortestPathResponse, error) {
 	params := url.Values{}
-	params.Add("start_node", startNodeID)
-	params.Add("end_node", endNodeID)
-	if len(relationshipKinds) > 0 {
-		params.Add("relationship_kinds", strings.Join(relationshipKinds, ","))
-	}
+	params.Add("start_node", startNode)
+	params.Add("end_node", endNode)
+	params.Add("relationship_kinds", relationshipKinds)
+
+	shortestPathURL := c.baseURL.JoinPath("/api/v2/graphs/shortest-path")
 	shortestPathURL.RawQuery = params.Encode()
 
 	req, err := c.newAuthenticatedRequest(http.MethodGet, shortestPathURL.String(), nil)
@@ -32,7 +29,15 @@ func (c *Client) GetShortestPath(startNodeID, endNodeID string, relationshipKind
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("shortest path query failed with status code: %d", resp.StatusCode)
+		if resp.StatusCode == http.StatusNotFound {
+			var errorResponse ErrorResponse
+			if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err == nil {
+				if len(errorResponse.Errors) > 0 && errorResponse.Errors[0].Message == "Path not found" {
+					return nil, fmt.Errorf("path not found")
+				}
+			}
+		}
+		return nil, fmt.Errorf("shortest path request failed with status code: %d", resp.StatusCode)
 	}
 
 	var shortestPathResponse ShortestPathResponse

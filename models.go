@@ -573,6 +573,13 @@ type OwnershipUpdate struct {
 	Action       string `json:"action"`
 }
 
+// AssetGroupSelectorUpdate represents a single update to an asset group's members.
+type AssetGroupSelectorUpdate struct {
+	SelectorName string `json:"selector_name"`
+	SID          string `json:"sid"`
+	Action       string `json:"action"`
+}
+
 // FileUploadJob represents a file upload job.
 type FileUploadJob struct {
 	ID         int       `json:"id"`

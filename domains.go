@@ -417,3 +417,24 @@ func (c *Client) GetDomainControllers(objectID string, limit int) (ControllersRe
 	}
 	return rawResponse, nil
 }
+
+// ListDomains fetches all domains.
+func (c *Client) ListDomains() ([]Domain, error) {
+	var response struct {
+		Data []Domain `json:"data"`
+	}
+	apiUrl := c.baseURL.JoinPath("/api/v2/available-domains")
+	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.do(req, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, err
+	}
+	return response.Data, nil
+}

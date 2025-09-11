@@ -82,13 +82,21 @@ func (c *Client) do(req *http.Request, sanitizedBody []byte) (*http.Response, er
 		return nil, err
 	}
 
-	if resp.StatusCode == http.StatusUnauthorized {
+	if resp.StatusCode >= 400 {
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read error response body: %w", err)
+		}
+
 		var errorResponse ErrorResponse
-		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err == nil {
+		if err := json.Unmarshal(body, &errorResponse); err == nil {
 			if len(errorResponse.Errors) > 0 {
-				return nil, fmt.Errorf(errorResponse.Errors[0].Message)
+				return nil, fmt.Errorf("API error: %s", errorResponse.Errors[0].Message)
 			}
 		}
+		// Fallback to a generic error if parsing fails or there are no specific messages
+		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
 	// Decompress gzipped responses
