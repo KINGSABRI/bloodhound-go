@@ -300,6 +300,11 @@ type AzureVM struct {
 	OperatingSystem string `json:"operatingsystem"`
 }
 
+// AzureTenant represents a BloodHound Azure Tenant object.
+type AzureTenant struct {
+	BaseAzureEntity
+}
+
 // EntityAdmin represents a principal with admin rights to another entity.
 type EntityAdmin struct {
 	Name       string `json:"name"`

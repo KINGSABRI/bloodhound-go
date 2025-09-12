@@ -174,3 +174,51 @@ func (c *Client) GetAzureVMByName(vmName string) (*AzureVM, error) {
 
 	return nil, fmt.Errorf("azure vm not found: %s", vmName)
 }
+
+// GetAzureTenant fetches a single Azure tenant by its Object ID.
+func (c *Client) GetAzureTenant(objectID string) (*AzureTenant, error) {
+	url := c.baseURL.JoinPath("/api/v2/azure/entities/", objectID)
+	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := c.do(req, nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("get azure tenant failed with status code: %d", resp.StatusCode)
+	}
+
+	var response struct {
+		Data struct {
+			Props      AzureTenant     `json:"props"`
+			BaseEntity BaseAzureEntity `json:"base"`
+		} `json:"data"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, fmt.Errorf("failed to decode get azure tenant response: %w", err)
+	}
+	tenant := response.Data.Props
+	tenant.BaseAzureEntity = response.Data.BaseEntity
+	tenant.ObjectType = "AZTenant"
+	return &tenant, nil
+}
+
+// GetAzureTenantByName fetches a single Azure tenant by its name.
+func (c *Client) GetAzureTenantByName(tenantName string) (*AzureTenant, error) {
+	searchResponse, err := c.Search(tenantName, "AZTenant", 0)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, result := range searchResponse.Data {
+		if strings.EqualFold(result.Name, tenantName) {
+			return c.GetAzureTenant(result.ObjectID)
+		}
+	}
+
+	return nil, fmt.Errorf("azure tenant not found: %s", tenantName)
+}
