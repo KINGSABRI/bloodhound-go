@@ -9,7 +9,8 @@ import (
 
 // CypherQuery represents a Cypher query.
 type CypherQuery struct {
-	Query string `json:"query"`
+	Query             string `json:"query"`
+	IncludeProperties bool   `json:"include_properties"`
 }
 
 // SavedQuery represents a saved Cypher query.
@@ -144,7 +145,7 @@ func (c *Client) RevokeSavedQuery(id int, userSIDs []string) error {
 // RunCypherQuery runs a Cypher query.
 func (c *Client) RunCypherQuery(query string) (json.RawMessage, error) {
 	apiUrl := c.baseURL.JoinPath("/api/v2/graphs/cypher")
-	body, err := json.Marshal(CypherQuery{Query: query})
+	body, err := json.Marshal(CypherQuery{Query: query, IncludeProperties: true})
 	if err != nil {
 		return nil, err
 	}
