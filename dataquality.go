@@ -18,6 +18,7 @@ package bloodhound
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -84,12 +85,15 @@ func (s *Client) GetADDataQualityStats(domainID string) (ADDataQualityStat, erro
 	} else {
 		defer resp.Body.Close()
 		var response struct {
-			Data ADDataQualityStat `json:"data"`
+			Data []ADDataQualityStat `json:"data"`
 		}
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			return stats, err
 		}
-		return response.Data, nil
+		if len(response.Data) > 0 {
+			return response.Data[0], nil
+		}
+		return stats, fmt.Errorf("no AD data quality stats found for domain %s", domainID)
 	}
 }
 
@@ -104,11 +108,14 @@ func (s *Client) GetAzureDataQualityStats(tenantID string) (AzureDataQualityStat
 	} else {
 		defer resp.Body.Close()
 		var response struct {
-			Data AzureDataQualityStat `json:"data"`
+			Data []AzureDataQualityStat `json:"data"`
 		}
 		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 			return stats, err
 		}
-		return response.Data, nil
+		if len(response.Data) > 0 {
+			return response.Data[0], nil
+		}
+		return stats, fmt.Errorf("no Azure data quality stats found for tenant %s", tenantID)
 	}
 }
