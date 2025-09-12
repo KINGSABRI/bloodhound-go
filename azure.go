@@ -177,7 +177,7 @@ func (c *Client) GetAzureVMByName(vmName string) (*AzureVM, error) {
 
 // GetAzureTenant fetches a single Azure tenant by its Object ID.
 func (c *Client) GetAzureTenant(objectID string) (*AzureTenant, error) {
-	url := c.baseURL.JoinPath("/api/v2/azure/entities/", objectID)
+	url := c.baseURL.JoinPath("/api/v2/azure-tenants/", objectID)
 	req, err := c.newAuthenticatedRequest(http.MethodGet, url.String(), nil)
 	if err != nil {
 		return nil, err

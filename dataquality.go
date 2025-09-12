@@ -49,7 +49,7 @@ type ADDataQualityStat struct {
 }
 
 type AzureDataQualityStat struct {
-	TenantID             string    `json:"tenant_id"`
+	TenantID             string    `json:"tenantid"`
 	Users                int       `json:"users"`
 	Groups               int       `json:"groups"`
 	Apps                 int       `json:"apps"`
