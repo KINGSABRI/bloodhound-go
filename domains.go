@@ -419,9 +419,9 @@ func (c *Client) GetDomainControllers(objectID string, limit int) (ControllersRe
 }
 
 // ListDomains fetches all domains.
-func (c *Client) ListDomains() ([]Domain, error) {
+func (c *Client) ListDomains() ([]AvailableDomain, error) {
 	var response struct {
-		Data []Domain `json:"data"`
+		Data []AvailableDomain `json:"data"`
 	}
 	apiUrl := c.baseURL.JoinPath("/api/v2/available-domains")
 	req, err := c.newAuthenticatedRequest(http.MethodGet, apiUrl.String(), nil)

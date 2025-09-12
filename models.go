@@ -634,3 +634,10 @@ type DomainTrustsResponse struct {
 	Skip  int             `json:"skip"`
 	Data  json.RawMessage `json:"data"`
 }
+// AvailableDomain represents a single domain in the list of available domains.
+type AvailableDomain struct {
+	Type      string `json:"type"`
+	Name      string `json:"name"`
+	ID        string `json:"id"`
+	Collected bool   `json:"collected"`
+}
