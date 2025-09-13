@@ -509,7 +509,7 @@ type GPOsResponse struct {
 type ForeignPrincipal struct {
 	Name       string `json:"name"`
 	ObjectID   string `json:"objectID"`
-	ObjectType string `json:"object_type"`
+	ObjectType string `json:"label"`
 	IsTierZero bool   `json:"is_tier_zero"`
 }
 
