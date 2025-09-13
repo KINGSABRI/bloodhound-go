@@ -508,7 +508,7 @@ type GPOsResponse struct {
 // ForeignPrincipal represents a user or group from a foreign domain.
 type ForeignPrincipal struct {
 	Name       string `json:"name"`
-	ObjectID   string `json:"object_id"`
+	ObjectID   string `json:"objectID"`
 	ObjectType string `json:"object_type"`
 	IsTierZero bool   `json:"is_tier_zero"`
 }
