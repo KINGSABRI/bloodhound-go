@@ -134,10 +134,10 @@ func (c *Client) GetOUUsers(objectID string, limit int) (UsersResponse, error) {
 	return rawResponse, nil
 }
 
-// GetOUControllers fetches the controllers of a given OU.
-func (c *Client) GetOUControllers(objectID string, limit int) (ControllersResponse, error) {
-	var rawResponse ControllersResponse
-	apiUrl := c.baseURL.JoinPath("/api/v2/ous/", objectID, "/controllers")
+// GetOuGPOs fetches the GPOs linked to a given OU.
+func (c *Client) GetOuGPOs(objectID string, limit int) (GPOsResponse, error) {
+	var rawResponse GPOsResponse
+	apiUrl := c.baseURL.JoinPath("/api/v2/ous/", objectID, "/gpos")
 	params := url.Values{}
 	if limit > 0 {
 		params.Add("limit", fmt.Sprintf("%d", limit))
