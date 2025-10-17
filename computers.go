@@ -27,22 +27,22 @@ func (c *Client) GetComputer(objectID string) (*Computer, error) {
 
 	var response struct {
 		Data struct {
-			Props                   Computer `json:"props"`
-			AdminRights             int      `json:"adminRights"`
-			AdminUsers              int      `json:"adminUsers"`
-			ConstrainedPrivs        int      `json:"constrainedPrivs"`
-			ConstrainedUsers        int      `json:"constrainedUsers"`
-			Controllables           int      `json:"controllables"`
-			Controllers             int      `json:"controllers"`
-			DCOMRights              int      `json:"dcomRights"`
-			DCOMUsers               int      `json:"dcomUsers"`
-			GPOs                    int      `json:"gpos"`
-			GroupMembership         int      `json:"groupMembership"`
-			PSRemoteRights          int      `json:"psRemoteRights"`
-			PSRemoteUsers           int      `json:"psRemoteUsers"`
-			RDPRights               int      `json:"rdpRights"`
-			Sessions                int      `json:"sessions"`
-			SQLAdminUsers           int      `json:"sqlAdminUsers"`
+			Props            Computer `json:"props"`
+			AdminRights      int      `json:"adminRights"`
+			AdminUsers       int      `json:"adminUsers"`
+			ConstrainedPrivs int      `json:"constrainedPrivs"`
+			ConstrainedUsers int      `json:"constrainedUsers"`
+			Controllables    int      `json:"controllables"`
+			Controllers      int      `json:"controllers"`
+			DCOMRights       int      `json:"dcomRights"`
+			DCOMUsers        int      `json:"dcomUsers"`
+			GPOs             int      `json:"gpos"`
+			GroupMembership  int      `json:"groupMembership"`
+			PSRemoteRights   int      `json:"psRemoteRights"`
+			PSRemoteUsers    int      `json:"psRemoteUsers"`
+			RDPRights        int      `json:"rdpRights"`
+			Sessions         int      `json:"sessions"`
+			SQLAdminUsers    int      `json:"sqlAdminUsers"`
 		} `json:"data"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
@@ -101,7 +101,7 @@ func (c *Client) GetComputerByName(computerName string) (*Computer, error) {
 // GetComputerAdmins fetches the list of principals with admin rights to a given computer.
 func (c *Client) GetComputerAdmins(objectID string, limit int) (EntityAdminsResponse, error) {
 	var rawResponse EntityAdminsResponse
-	apiUrl := c.baseURL.JoinPath("/api/v2/computers/", objectID, "/admin-rights")
+	apiUrl := c.baseURL.JoinPath("/api/v2/computers/", objectID, "/admin-users")
 	params := url.Values{}
 	if limit > 0 {
 		params.Add("limit", fmt.Sprintf("%d", limit))
