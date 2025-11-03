@@ -429,7 +429,7 @@ type ComputersResponse struct {
 type SearchResult struct {
 	ObjectID   string `json:"objectid"`
 	Name       string `json:"name"`
-	Type       string `json:"type"`
+	ObjectType string `json:"type"`
 	SystemTags string `json:"system_tags"`
 }
 
@@ -641,8 +641,8 @@ type DomainTrustsResponse struct {
 }
 // AvailableDomain represents a single domain in the list of available domains.
 type AvailableDomain struct {
-	Type      string `json:"type"`
-	Name      string `json:"name"`
-	ID        string `json:"id"`
-	Collected bool   `json:"collected"`
+	ObjectType string `json:"type"`
+	Name       string `json:"name"`
+	ID         string `json:"id"`
+	Collected  bool   `json:"collected"`
 }
