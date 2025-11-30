@@ -47,3 +47,36 @@ func (c *Client) GetShortestPath(startNode, endNode, relationshipKinds string) (
 
 	return &shortestPathResponse, nil
 }
+
+// GetPathComposition returns the composition of a complex edge.
+func (c *Client) GetPathComposition(startNode, endNode, edgeType string) (*ShortestPathResponse, error) {
+	params := url.Values{}
+	params.Add("source_node", startNode)
+	params.Add("target_node", endNode)
+	params.Add("edge_type", edgeType)
+
+	compositionURL := c.baseURL.JoinPath("/api/v2/graphs/edge-composition")
+	compositionURL.RawQuery = params.Encode()
+
+	req, err := c.newAuthenticatedRequest(http.MethodGet, compositionURL.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create path composition request: %w", err)
+	}
+
+	resp, err := c.do(req, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute path composition request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("path composition request failed with status code: %d", resp.StatusCode)
+	}
+
+	var compositionResponse ShortestPathResponse
+	if err := json.NewDecoder(resp.Body).Decode(&compositionResponse); err != nil {
+		return nil, fmt.Errorf("failed to decode path composition response: %w", err)
+	}
+
+	return &compositionResponse, nil
+}
