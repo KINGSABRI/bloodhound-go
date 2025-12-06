@@ -104,7 +104,7 @@ type CypherResponse struct {
 
 // CypherResponseData represents the complex data structure returned by a Cypher query.
 type CypherResponseData struct {
-	Records []map[string]interface{} `json:"records"`
+	Records []map[string]interface{}       `json:"records"`
 	Nodes   map[string]GraphNodeProperties `json:"nodes"`
 	Edges   []GraphEdge                    `json:"edges"`
 }
@@ -121,35 +121,35 @@ type BaseEntity struct {
 
 // Computer represents a computer in BloodHound.
 type Computer struct {
-	Name                    string   `json:"name"`
-	ObjectID                string   `json:"objectid"`
-	ObjectType              string   `json:"object_type"`
-	DistinguishedName       string   `json:"distinguishedname"`
-	OperatingSystem         string   `json:"operatingsystem"`
-	Enabled                 bool     `json:"enabled"`
-	HasLAPS                 bool     `json:"haslaps"`
-	WhenCreated             interface{} `json:"whencreated"`
-	LastSeen                string   `json:"lastseen"`
-	ServicePrincipalNames   []string `json:"serviceprincipalnames"`
-	UnconstrainedDelegation bool     `json:"unconstraineddelegation"`
-	SupportedEncryptionTypes []string `json:"supportedencryptiontypes"`
-	LastLogon               interface{} `json:"lastlogon"`
-	IsDC                    bool     `json:"isdc"`
-	AdminRights             int      `json:"adminRights"`
-	AdminUsers              int      `json:"adminUsers"`
-	ConstrainedPrivs        int      `json:"constrainedPrivs"`
-	ConstrainedUsers        int      `json:"constrainedUsers"`
-	Controllables           int      `json:"controllables"`
-	Controllers             int      `json:"controllers"`
-	DCOMRights              int      `json:"dcomRights"`
-	DCOMUsers               int      `json:"dcomUsers"`
-	GPOs                    int      `json:"gpos"`
-	GroupMembership         int      `json:"groupMembership"`
-	PSRemoteRights          int      `json:"psRemoteRights"`
-	PSRemoteUsers           int      `json:"psRemoteUsers"`
-	RDPRights               int      `json:"rdpRights"`
-	Sessions                int      `json:"sessions"`
-	SQLAdminUsers           int      `json:"sqlAdminUsers"`
+	Name                     string      `json:"name"`
+	ObjectID                 string      `json:"objectid"`
+	ObjectType               string      `json:"object_type"`
+	DistinguishedName        string      `json:"distinguishedname"`
+	OperatingSystem          string      `json:"operatingsystem"`
+	Enabled                  bool        `json:"enabled"`
+	HasLAPS                  bool        `json:"haslaps"`
+	WhenCreated              interface{} `json:"whencreated"`
+	LastSeen                 string      `json:"lastseen"`
+	ServicePrincipalNames    []string    `json:"serviceprincipalnames"`
+	UnconstrainedDelegation  bool        `json:"unconstraineddelegation"`
+	SupportedEncryptionTypes []string    `json:"supportedencryptiontypes"`
+	LastLogon                interface{} `json:"lastlogon"`
+	IsDC                     bool        `json:"isdc"`
+	AdminRights              int         `json:"adminRights"`
+	AdminUsers               int         `json:"adminUsers"`
+	ConstrainedPrivs         int         `json:"constrainedPrivs"`
+	ConstrainedUsers         int         `json:"constrainedUsers"`
+	Controllables            int         `json:"controllables"`
+	Controllers              int         `json:"controllers"`
+	DCOMRights               int         `json:"dcomRights"`
+	DCOMUsers                int         `json:"dcomUsers"`
+	GPOs                     int         `json:"gpos"`
+	GroupMembership          int         `json:"groupMembership"`
+	PSRemoteRights           int         `json:"psRemoteRights"`
+	PSRemoteUsers            int         `json:"psRemoteUsers"`
+	RDPRights                int         `json:"rdpRights"`
+	Sessions                 int         `json:"sessions"`
+	SQLAdminUsers            int         `json:"sqlAdminUsers"`
 }
 
 // ADUser represents a BloodHound AD User object.
@@ -189,8 +189,8 @@ type ADUser struct {
 // Group represents a BloodHound Group object.
 type Group struct {
 	BaseEntity
-	IsAdmin      bool   `json:"admincount"`
-	Description  string `json:"description"`
+	IsAdmin        bool   `json:"admincount"`
+	Description    string `json:"description"`
 	SamAccountName string `json:"samaccountname"`
 	// Relationship Counts
 	AdminRights    int `json:"adminRights"`
@@ -205,40 +205,40 @@ type Group struct {
 
 // Domain represents a domain in BloodHound.
 type Domain struct {
-	Name                        string   `json:"name"`
-	ObjectID                    string   `json:"objectid"`
-	ObjectType                  string   `json:"object_type"`
-	DistinguishedName           string   `json:"distinguishedname"`
-	WhenCreated                 interface{} `json:"whencreated"`
-	Users                       int      `json:"users"`
-	Computers                   int      `json:"computers"`
-	Controllers                 int      `json:"controllers"`
-	DCSyncers                   int      `json:"dcsyncers"`
-	ForeignAdmins               int      `json:"foreignAdmins"`
-	ForeignGPOControllers       int      `json:"foreignGPOControllers"`
-	ForeignGroups               int      `json:"foreignGroups"`
-	ForeignUsers                int      `json:"foreignUsers"`
-	GPOs                        int      `json:"gpos"`
-	Groups                      int      `json:"groups"`
-	InboundTrusts               int      `json:"inboundTrusts"`
-	LinkedGPOs                  int      `json:"linkedgpos"`
-	OUs                         int      `json:"ous"`
-	OutboundTrusts              int      `json:"outboundTrusts"`
-	FSMORoleOwner               string   `json:"fsmoroleowner"`
-	DC                          string   `json:"dc"`
-	FunctionalLevel             string   `json:"functionallevel"`
-	MachineAccountQuota         int      `json:"ms-ds-machineaccountquota"`
-	AllUsersTrustQuota          int      `json:"msds-alluserstrustquota"`
-	IsACLProtected              bool     `json:"isaclprotected"`
-	IsCriticalSystemObject      bool     `json:"iscriticalsystemobject"`
-	LastCollected               string   `json:"lastcollected"`
-	LastSeen                    string   `json:"lastseen"`
-	LockoutDuration             interface{} `json:"lockoutduration"`
-	LockoutObservationWindow    interface{} `json:"lockoutobservationwindow"`
-	LockoutThreshold            int      `json:"lockoutthreshold"`
-	MasteredBy                  []string `json:"masteredby"`
-	MSDSMasteredBy              []string `json:"msds-masteredby"`
-	WellKnownObjects            []string `json:"wellknownobjects"`
+	Name                     string      `json:"name"`
+	ObjectID                 string      `json:"objectid"`
+	ObjectType               string      `json:"object_type"`
+	DistinguishedName        string      `json:"distinguishedname"`
+	WhenCreated              interface{} `json:"whencreated"`
+	Users                    int         `json:"users"`
+	Computers                int         `json:"computers"`
+	Controllers              int         `json:"controllers"`
+	DCSyncers                int         `json:"dcsyncers"`
+	ForeignAdmins            int         `json:"foreignAdmins"`
+	ForeignGPOControllers    int         `json:"foreignGPOControllers"`
+	ForeignGroups            int         `json:"foreignGroups"`
+	ForeignUsers             int         `json:"foreignUsers"`
+	GPOs                     int         `json:"gpos"`
+	Groups                   int         `json:"groups"`
+	InboundTrusts            int         `json:"inboundTrusts"`
+	LinkedGPOs               int         `json:"linkedgpos"`
+	OUs                      int         `json:"ous"`
+	OutboundTrusts           int         `json:"outboundTrusts"`
+	FSMORoleOwner            string      `json:"fsmoroleowner"`
+	DC                       string      `json:"dc"`
+	FunctionalLevel          string      `json:"functionallevel"`
+	MachineAccountQuota      int         `json:"ms-ds-machineaccountquota"`
+	AllUsersTrustQuota       int         `json:"msds-alluserstrustquota"`
+	IsACLProtected           bool        `json:"isaclprotected"`
+	IsCriticalSystemObject   bool        `json:"iscriticalsystemobject"`
+	LastCollected            string      `json:"lastcollected"`
+	LastSeen                 string      `json:"lastseen"`
+	LockoutDuration          interface{} `json:"lockoutduration"`
+	LockoutObservationWindow interface{} `json:"lockoutobservationwindow"`
+	LockoutThreshold         int         `json:"lockoutthreshold"`
+	MasteredBy               interface{} `json:"masteredby"`
+	MSDSMasteredBy           interface{} `json:"msds-masteredby"`
+	WellKnownObjects         []string    `json:"wellknownobjects"`
 }
 
 // GPO represents a BloodHound GPO object.
@@ -443,9 +443,9 @@ type SearchResponse struct {
 
 // AttackPath represents a single attack path.
 type AttackPath struct {
-	ObjectIDs   []string `json:"object_ids"`
-	NodeCounts  map[string]int `json:"node_counts"`
-	Severity    float64  `json:"severity"`
+	ObjectIDs   []string        `json:"object_ids"`
+	NodeCounts  map[string]int  `json:"node_counts"`
+	Severity    float64         `json:"severity"`
 	PathFinding json.RawMessage `json:"path_finding"`
 }
 
@@ -466,10 +466,10 @@ type AttackPathFindingsResponse struct {
 
 // Container represents a container in BloodHound.
 type Container struct {
-	Name              string `json:"name"`
-	ObjectID          string `json:"objectid"`
-	ObjectType        string `json:"object_type"`
-	DistinguishedName string `json:"distinguishedname"`
+	Name              string      `json:"name"`
+	ObjectID          string      `json:"objectid"`
+	ObjectType        string      `json:"object_type"`
+	DistinguishedName string      `json:"distinguishedname"`
 	WhenCreated       interface{} `json:"whencreated"`
 }
 
@@ -639,6 +639,7 @@ type DomainTrustsResponse struct {
 	Skip  int             `json:"skip"`
 	Data  json.RawMessage `json:"data"`
 }
+
 // AvailableDomain represents a single domain in the list of available domains.
 type AvailableDomain struct {
 	ObjectType string `json:"type"`
