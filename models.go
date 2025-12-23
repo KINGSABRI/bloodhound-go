@@ -531,10 +531,11 @@ type GraphNodeProperties struct {
 
 // GraphEdge represents an edge in a graph response.
 type GraphEdge struct {
-	Source string `json:"source"`
-	Target string `json:"target"`
-	Label  string `json:"label"`
-	Kind   string `json:"kind"`
+	Source     string                 `json:"source"`
+	Target     string                 `json:"target"`
+	Label      string                 `json:"label"`
+	Kind       string                 `json:"kind"`
+	Properties map[string]interface{} `json:"properties"`
 }
 
 // ShortestPathData represents the nodes and edges of the shortest path graph.
